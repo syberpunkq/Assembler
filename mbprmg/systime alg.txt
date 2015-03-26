@@ -1,0 +1,64 @@
+Реализованы три варианта:
+1) вызов функции определения времени $2C. Он возвращает:
+CH - часы,CL - минуты,DH - секунды,DL - миллисекунды (с дискретностью 55 мс)
+На что делить, передается как параметр
+2) берется число тиков, которое хранится по адресу 0:$046C - 4 байта. Это сколько раз по 55 мс прошло со времени запуска процессора.
+На что делить, передается как параметр
+3) тоже тики, но на что делить, хранится в локальной константе. Ее значение не теряется после выхода из подпрограммы
+Ну а все остальное, что не ясно будет - спрашивай в минифоруме
+
+
+function GetNumber01(var Divider: Integer): Integer; assembler;
+asm
+  mov ax, 040h
+  mov es, ax
+  mov ax, es:[06Ch]
+  xor dx, dx
+  les si, divider
+  mov bx, es:[si]
+  div bx
+end;
+
+
+function GetNumber02(var Divider: Integer): Integer; assembler;
+asm
+  mov ah, 2ch
+  int 21h
+  mov al, dl
+  xor ah, ah
+  les si, divider
+  mov bx, es:[si]
+  div bl
+end;
+
+function GetNumber03: Integer;
+const divider: Integer = 1;
+begin
+asm
+  mov ax, 040h
+  mov es, ax
+  mov ax, es:[6Ch]
+  xor dx, dx
+  mov bx, divider
+  div bx
+  inc bx
+  or  bx, bx
+  jnz @@1
+    inc bx
+ @1:
+  mov divider, bx
+  mov @Result, ax
+end;
+end;
+
+VAR count: Integer;
+BEGIN
+ WriteLn('----------------');
+ for count:=1 to 20 do Write(GetNumber01(count):8);
+ WriteLn;
+ for count:=1 to 20 do Write(GetNumber02(count):8);
+ WriteLn;
+ for count:=1 to 20 do Write(GetNumber03:8);
+ WriteLn;
+
+END.
